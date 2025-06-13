@@ -6,12 +6,14 @@ export default function GamePage() {
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
-    socketRef.current = new WebSocket("ws://localhost:4001");
-    socketRef.current.onmessage = (e) => {
-      setMoves((prev) => [...prev, e.data]);
-    };
-    return () => socketRef.current?.close();
-  }, []);
+  socketRef.current = new WebSocket("ws://localhost:4001");
+  socketRef.current.onmessage = async (e) => {
+    const text = await e.data.text();
+    setMoves((prev) => [...prev, text]);
+  };
+
+  return () => socketRef.current?.close();
+}, [])
 
   const sendMove = () => {
     const move = `Player moved at ${new Date().toLocaleTimeString()}`;

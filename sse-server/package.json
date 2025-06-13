@@ -1,0 +1,17 @@
+{
+  "name": "SSE-Server",
+  "version": "1.0.0",
+  "description": "SSE-Server",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "http": "^0.0.1-security",
+    "nodemon": "^3.1.10"
+  }
+}
