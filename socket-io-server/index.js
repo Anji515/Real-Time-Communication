@@ -5,6 +5,7 @@ const cors = require("cors");
 
 const app = express();
 app.use(cors());
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
@@ -17,7 +18,10 @@ io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
   socket.on("message", (msg) => {
-    io.emit("message", msg);
+    io.emit("message", {
+      text: msg,
+      sender: socket.id,
+    });
   });
 
   socket.on("disconnect", () => {
