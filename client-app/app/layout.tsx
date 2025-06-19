@@ -12,9 +12,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-gray-100 text-gray-900">
         <nav className="bg-white shadow p-4 flex gap-4">
-          <Link href="/" className="hover:underline text-blue-600">💬 Chat</Link>
-          <Link href="/websocket" className="hover:underline text-green-600">🎮 Game</Link>
-          <Link href="/sse" className="hover:underline text-red-600">📢 Live Scores</Link>
+          <Link href="/" className="hover:underline text-green-600">🎮 Game (WebSocket) </Link>
+          <Link href="/socket" className="hover:underline text-blue-600">💬 Chat (Socket.IO) </Link>
+          <Link href="/sse" className="hover:underline text-red-600">📢 Live Scores (SSE)</Link>
         </nav>
         <main className="p-6">{children}</main>
       </body>

@@ -1,83 +1,74 @@
-'use client';
-import { useEffect, useState } from 'react';
-import io, { Socket } from 'socket.io-client';
-import { toast, Toaster } from 'react-hot-toast';
+"use client";
+import { useEffect, useRef, useState } from "react";
 
-export default function ChatPage() {
-  const [msg, setMsg] = useState('');
-  const [messages, setMessages] = useState<{ text: string; sender: string }[]>([]);
-  const [socketId, setSocketId] = useState('');
-  const [socket, setSocket] = useState<Socket | null>(null);
+type Cell = "X" | "O" | null;
 
-  console.log('messages', messages, 'socketId', socketId);
+export default function GamePage() {
+  const [board, setBoard] = useState<Cell[]>(Array(9).fill(null));
+  const [symbol, setSymbol] = useState<"X" | "O" | null>(null);
+  const [turn, setTurn] = useState<"X" | "O">("X");
+  const [winner, setWinner] = useState<Cell | "Draw" | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
+
   useEffect(() => {
-    const newSocket = io('http://localhost:4000');
-    setSocket(newSocket);
+    const socket = new WebSocket("ws://localhost:4001");
+    socketRef.current = socket;
 
-    newSocket.on('connect', () => {
-      console.log('Socket connected with ID:', newSocket.id);
-      setSocketId(newSocket.id || '');
-    });
-
-    newSocket.on('message', (data) => {
-      setMessages((prev) => [...prev, data]);
-
-      if (data.sender !== newSocket.id) {
-        toast.success(`New Message 💬 : ${data.text}`, {
-          duration: 3000,
-          position: 'top-right',
-        });
+    socket.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      if (data.type === "init") {
+        setSymbol(data.symbol);
+        setBoard(data.gameState);
+        setTurn(data.currentTurn);
+      } else if (data.type === "update") {
+        setBoard(data.gameState);
+        setTurn(data.currentTurn);
+        setWinner(data.winner || null);
+      } else if (data.type === "reset") {
+        setBoard(data.gameState);
+        setTurn(data.currentTurn);
+        setWinner(null);
+      } else if (data.type === "full") {
+        alert("Room is full. Try again later.");
       }
-    });
-
-    return () => {
-      newSocket.disconnect();
     };
+
+    return () => socket.close();
   }, []);
 
-  const sendMessage = () => {
-    if (!msg.trim()) return;
-    if(socket) socket.emit('message', msg);
-    setMsg('');
+  const handleClick = (index: number) => {
+    if (!symbol || board[index] || turn !== symbol || winner) return;
+    socketRef.current?.send(JSON.stringify({ type: "move", index, symbol }));
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-6">
-      <Toaster />
-      <div className="w-full max-w-md bg-white shadow-md rounded-xl p-4 space-y-4">
-        <h2 className="text-2xl font-bold text-center">💬 Live Chat</h2>
-        <div className="h-96 overflow-y-auto border rounded p-2 bg-gray-50">
-          <ul className="space-y-1">
-            {messages.map((m, i) => (
-              <li
-                key={i}
-                className={`px-4 py-2 rounded-md ${
-                  m.sender === socketId ? 'bg-green-200 text-right' : 'bg-blue-200 text-left'
-                }`}
-              >
-                {m.text}
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div className="flex space-x-2">
-          <input
-            className="flex-1 border rounded p-2"
-            value={msg}
-            onChange={(e) => setMsg(e.target.value)}
-            placeholder="Type your message..."
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') sendMessage();
-            }}
-          />
+    <div className="flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-indigo-200 p-10 py-40 rounded-2xl">
+      <h1 className="text-3xl font-bold mb-6 text-indigo-700">
+        🎯 Tic-Tac-Toe
+      </h1>
+      <p className="mb-2 text-sm text-gray-600">
+        You are: <span className="font-semibold">{symbol}</span>
+      </p>
+      <div className="grid grid-cols-3 gap-2 w-60 mb-4">
+        {board.map((cell, i) => (
           <button
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            onClick={sendMessage}
+            key={i}
+            className={`h-20 w-20 text-3xl font-bold border rounded cursor-pointer ${
+              cell === "X" ? "text-red-500" : "text-blue-500"
+            } bg-white hover:bg-indigo-100`}
+            onClick={() => handleClick(i)}
           >
-            Send
+            {cell}
           </button>
-        </div>
+        ))}
       </div>
+      {winner ? (
+        <p className="text-xl font-semibold text-green-700">
+          {winner === "Draw" ? "It's a Draw!" : `🎉 ${winner} Wins!`}
+        </p>
+      ) : (
+        <p className="text-sm text-gray-600">Turn: {turn}</p>
+      )}
     </div>
   );
 }
